@@ -16,14 +16,15 @@ class HomeController extends Controller
         $result = $request->validate([
             'name'=>'required',
             'count'=>'required',
-        ])->only(["name","count"]);
+        ]);
         
         $item = Items::create([
-            'name'=> $request->get("name"),
-            'count'=> $request->get("count"),
+            'name'=> $result["name"],
+            'count'=> $result["count"],
         ]);
+
         $item ->save();
-        return view("Result")->with("result", Items::all());
+        return view("Result")->with("result", items::all());
     }
 }
 

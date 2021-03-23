@@ -7,13 +7,10 @@ use Database\Seeders\ItemSeeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     *
-     * @return void
-     */
+
     public function run()
     {
-       itemseeder::run();
+        // Call multiple seeders
+       $this->call(ItemSeeder::class);
     }
 }
