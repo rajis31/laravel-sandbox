@@ -17,7 +17,9 @@ class CreateItemTable extends Migration
             $table->string("name",255);
             $table->integer("count");
             $table->timestamp("created")->nullable();
-            $table->integer("user_id");
+            $table->integer("user_id")->nullable();
+            $table->timestamp("created_at");
+            $table->timestamp("updated_at");
         });
     }
 

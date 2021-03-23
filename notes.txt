@@ -1,0 +1,809 @@
+Laravel Notes 
+
+Routes
+===========================
+1. Define your web routes in routes/web.php  and API routes in routes/api.php
+
+2. Basic Route Definition 
+		Route::get('/', function(){
+			return 'Hello World';
+		});
+
+3. Route facade also has other verbs such as Route::post etc.
+
+4. Route Definition 2
+	Route::match(['GET','POST'],'/', function(){  });
+
+5. Passing Route a controller IE Route::get("/",'WelcomeController@index'); <---- IMPORTANT 
+   Another way Route::get("/",[WelcomeController::class,'index']);
+
+6. Route Parameters 
+	a. if your URL has dynamic parametes then you can define your route as 
+			Route::get('users/{id}/friends', function($id) { });
+	b. optional parameter using ?
+	       Route::get('users/{id?}', function($id='fallback') { });
+
+	c. Pattern matching 
+		Route::get('users/{id}/friends', function($id) { })->where('id','[0-9]+');
+		Route::get('posts/{id}/{slug}', function($id,$slug) { })->where(['id','[0-9]+', 'slug'=>'[A-Za-z]+']);
+
+7. Route Names 
+	a. you can refer to the routes elsewhere using url() global helper IE  <a href ="<?php echo url("/"); ?>">
+	c. You can name routes using name() 
+			// Defining  a route with name()
+			Route::get('members/{id}', 'MembersController@show') { })->name('members.show');
+			
+			// Linking route in a view using route() helper 
+			<a href ="<?php echo route('members.show',['id'=>14]); ?>">
+
+8. Route Groups 
+		a. useful such as for authenticated only links 
+			Route::middleware("auth")-> group( function() {
+					Route::get("dashboard", function() {
+								return view("dashboard");
+							});
+					Route::get("account", function() {
+								return view("account");
+							});
+					});
+					
+9. Path prefixes 
+	    a. Suppose you got a dashboard that is prefixed with /dashboard
+		b.  Route::prefix("dashboard")->group(function(){
+				Route::get("/", function() {
+						});
+				Route::get("/users", function() {
+						});
+			});
+
+10. Fallback routes 
+	a. Route::any('{anything}', 'CatchAllController')->where('anything','*');
+	
+11. Namespace Prefixes
+	a. You can use namespaces to avoid long controller references such as Dashboard/UsersController@index 
+	b. Route:: namespace("Dashboard")->group(function() {
+			// App\Http\Controllers\Dashboard\PurchasesController
+			Route::get("dashboard/purchases','PurchasesController@index');
+		});
+	
+12. Views 
+	a. Laravel takes two formats of a view either php or blade 
+	b. So 
+		 	Route::get("/", function() {
+							return view("home");
+				});
+			
+			// This will search for resources/views/home.blade.php or resources/views/home.php
+			Route::get("tasks", function() {
+							return view("taskes.index")->with("tasks", Task::all());
+				});
+			// This loads resources/views/task/index.blade.php (or pure php file) 
+			
+13. Simple routes with Route::view() 
+	a. Route::view("/","welcome");
+	b. Route::view("/","welcome",["User" => "Michael"]);
+
+14. Controllers 
+		a. php artisan make:controller TasksController <--- This command will make a controller file 
+		b. Controllers are located in app/Http/Controllers and laravel looks there by default 
+		c. Controller Example 
+				public function index(){
+						return view("tasks.index")->with("tasks", Task::all());
+						}
+					// This method loads resources/views/tasks/index.blade.php 
+		d. Controller - Getting user input
+			I. Route::get("tasks/create", "TasksController@create");
+			II. Route::post("tasks","TasksController@store");
+			III. In TasksController.php file define 
+					public function store() {
+							Task::create(request()->only(["title","description"]));
+							return redirect("tasks");
+							
+							// Uses the request method to grab the request and only() to pull title and description fields 
+						]}
+
+15 Injecting Dependencies into controllers
+	a. All controller methods are resolved out of Laravels container which means that anything you typehint that the conainer knows how to resolve 
+	   will automatically be injected 
+	b. Typehinting in PHP means putting a name of a class of interface in front of a variable in a method signature 
+		Tells php that whatever is passed in must be of that type 
+			public function __construct(Logger $logger) {}
+	c. php artisan make:controller MySampleResourceController --resource
+	d. Run php artisan route:list <-- This will show you all the available routes 
+
+16. Route Caching 
+		a. Can take alot of time to parse routes/* files and route caching speeds it up 
+		b. run php artisan route:cache and Laravel will serialize all the results in routes/* files 
+		c. Run the cache command on your production server since it can cause confusion in development since 
+		   you have to keep running the cache command again when you make changes to development files to 
+		   get the changes to be picked up 
+		   
+17. redirect 
+	a. Route::get('redirect-with-helper', function () {
+			return redirect()->to('login');
+		});
+
+
+Blade Templating
+====================================
+1. {{ $variable }} if equivalent to <?= htmlentities($variable) ?>
+2. {!! $variable !!} is without the escaping 
+3. @if @elseif @else @endif 
+4. @for @foreach @while 
+
+@while ($item = array_pop($items))
+{{ $item->orSomething() }}<br>
+@endwhile
+
+@for ($i = 0; $i < $talk->slotsCount(); $i++)
+	The number is {{ $i }}<br>
+@endfor
+
+@foreach ($talks as $talk)
+	{{ $talk->title }} ({{ $talk->length }} minutes)<br>
+@endforeach
+
+@while ($item = array_pop($items))
+	{{ $item->orSomething() }}<br>
+@endwhile
+
+
+
+<!-- resources/views/layouts/master.blade.php -->
+<html>
+<head>
+	<title>My Site | @yield('title', 'Home Page')</title> //the default content in @yield('title') will only be shown if it’s never extended.
+</head>
+<body>
+	<div class="container">
+		@yield('content') // @section/@show, on the other hand, is both defining a default and doing so in such a way that its default contents will be available to its children,through @parent.
+	</div>
+	@section('footerScripts')
+		<script src="app.js"></script>
+	@show
+</body>
+</html>
+
+
+
+// extending blade layouts/
+
+<!-- resources/views/dashboard.blade.php -->
+@extends('layouts.master') // Each file should only extend one other file
+// its role is to define the content of various sections, but not to stand alone
+
+@section('title', 'Dashboard') // @section('title', 'Dashboard'), we provide our content for the first section, title.
+// this is using the shortcut without @endsection
+
+@section('content')
+Welcome to your application dashboard!
+@endsection
+@section('footerScripts')
+@parent // include the content from the parent
+<script src="dashboard.js"></script>
+@endsection
+
+
+@include 
+1. This lets you pull in another view 
+2. @include pulls in the partial and, optionally, passes data into it
+3. you can also reference any variables within the included file that are available to the including view
+4. @includeIf, @includeWhen, and @includeFirst directives
+
+Conditionally including views
+{{-- Include a view if it exists --}}
+@includeIf('sidebars.admin', ['some' => 'data'])
+{{-- Include a view if a passed variable is truth-y --}}
+@includeWhen($user->isAdmin(), 'sidebars.admin', ['some' => 'data'])
+{{-- Include the first view that exists from a given array of views --}}
+@includeFirst(['customs.header', 'header'], ['some' => 'data'])
+
+@each 
+1. This lets you loop over an array or collection and @include a partial for each item 
+
+<!-- resources/views/sidebar.blade.php -->
+<div class="sidebar">
+	@each('partials.module', $modules, 'module', 'partials.empty-module')
+</div>
+// The first parameter in each is the name of the view partial, second is the array/collection, and 
+// third parameter is the variable name that each will be passed to the view as 
+// Fourth parameter is optional to show if an array is empty 
+
+
+<!-- resources/views/partials/module.blade.php -->
+<div class="sidebar-module">
+	<h1>{{ $module->title }}</h1>
+</div>
+
+<!-- resources/views/partials/empty-module.blade.php -->
+<div class="sidebar-module">
+	No modules :(
+</div>
+
+
+// most common situation for this is when certain pages have specific unique CSS and JavaScript files they need to load.
+// Blade’s stacks are built for exactly this situation. In your parent template, define a stack, which is just a placeholder. 
+// Then, in each child template you can “push” entries onto that stack with @push/@endpush which adds them to the bottom of the stack in
+// the final render
+
+<!-- resources/views/layouts/app.blade.php -->
+<html>
+<head><!-- the head --></head>
+<body>
+<!-- the rest of the page -->
+	<script src="/css/global.css"></script>
+<!-- the placeholder where stack content will be placed -->
+	@stack('scripts')
+</body>
+</html>
+
+
+<!-- resources/views/jobs.blade.php -->
+@extends('layouts.app')
+@push('scripts')
+<!-- push something to the bottom of the stack -->
+<script src="/css/jobs.css"></script>
+@endpush
+
+<!-- resources/views/jobs/apply.blade.php -->
+@extends('jobs')
+@prepend('scripts')
+<!-- push something to the top of the stack -->
+<script src="/css/jobs--apply.css"></script>
+@endprepend
+
+// Result 
+<html>
+<head><!-- the head --></head>
+<body>
+	<!-- the rest of the page -->
+	<script src="/css/global.css"></script>
+	<!-- the placeholder where stack content will be placed -->
+	<script src="/css/jobs--apply.css"></script>
+	<script src="/css/jobs.css"></script>
+</body>
+</html>
+
+// Then, in each child template you can “push” entries onto that stack with @push/@endpush, 
+// which adds them to the bottom of the stack in the final render
+
+
+Using Components and Slots
+a. Components are used when you are using view partials and passing large chunks of content into them as variables
+
+<!--- Slot Example 1 --->
+<!-- resources/views/partials/modal.blade.php -->
+<div class="modal">
+	<div>{{ $slot }}</div>
+	<div class="close button etc">...</div>
+</div>
+
+<!-- in another template -->
+@component('partials.modal')
+	<p>The password you have provided is not valid.
+	Here are the rules for valid passwords: [...]</p>
+	
+	<p><a href="#">...</a></p>
+@endcomponent
+
+b. multiple slots 
+
+<!-- resources/views/partials/modal.blade.php -->
+<div class="modal">
+	<div class="modal-header">{{ $title }}</div>
+	<div>{{ $slot }}</div>
+	<div class="close button etc">...</div>
+</div>
+
+@component('partials.modal')
+	@slot('title')
+		Password validation failure
+	@endslot
+	<p>The password you have provided is not valid.
+	Here are the rules for valid passwords: [...]</p>
+
+	<p><a href="#">...</a></p>
+@endcomponent
+
+<!--- Passing data to component --->
+@component('partials.modal', ['class' => 'danger'])
+...
+@endcomponent
+
+
+
+Databases & Eloquent 
+===================================================
+1. The configuration for database access lives in config/database.php and .env.
+2. you can have multiple connections with a db
+3. A migration is a single file that defines two things: the modifications desired when running this migration up and, optionally, 
+the modifications desired when running this migration down
+4. Migrations are always run in order by date.
+5. EX: Create Users Table 
+<?php
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+class CreateUsersTable extends Migration
+{
+	/**
+	* Run the migrations.
+	*
+	* @return void
+	*/
+public function up()
+{
+	Schema::create('users', function (Blueprint $table) {
+	$table->bigIncrements('id');
+	$table->string('name');
+	$table->string('email')->unique();
+	$table->timestamp('email_verified_at')->nullable();
+	$table->string('password');
+	$table->rememberToken();
+	$table->timestamps();
+});
+}
+	/**
+	* Reverse the migrations.
+	*
+	* @return void
+	*/
+public function down()
+	{
+		Schema::dropIfExists('users');
+	}
+}
+
+6. Artisan Commands 
+a. php artisan make:migration create_users_table <-- Blank Migration
+b. php artisan make:migration add_votes_to_users_table --table=users <-- Prefiills the migration for mods to existing user table
+c. php artisan make:migration create_users_table --create=users  <-- Prefiills code to generate user table
+
+d. php artisan migrate <-- Runs all outstanding migrations
+e. php artisan migrate --seed
+f. php artisan migrate:install <-- created db table to track migrations 
+g. php artisan migrate:reset <--- rolls back every db migration
+h. php artisan migrate:refresh <--- Rolls back every db migration on this instance and then runs every migration available
+i. php artisan migrate:rollback [--step=n] <-- rolls back n # of migrations
+
+
+7. Everything done in migrations relies on the Schema facade 
+	a. Creating a table using Schema 
+			Schema::create('users', function (Blueprint $table) {
+				// Create columns here
+				$table->string('name');
+				$table->string('email')->nullable()->after('last_name');
+				$table->string('name', 100)->change();
+				$table->string('deleted_at')->nullable()->change();
+				$table->renameColumn('promoted', 'is_promoted');
+				$table->dropColumn('votes');
+			});
+	b. column types 
+		1. integer(colName)
+		2. string(colName,length)
+		3. boolean(colName)
+		4. datetime(colName)
+		5. double(colName, total digits, digis after decimal)
+		6. float(colName, precision,scale)
+		7. json(colName) and jsonb(colName)
+		8. text(colName)
+	
+	c. Extra properties 
+		1. nullable() - Allows null values 
+		2. default("default") - Allows default values
+		3. first() - Place column first 
+		4. after(colName) - Place after column
+		5. unique()
+		6. primary()
+		
+	d. Dropping table 
+		1. Schema::dropIfExists('contacts');  <-- Good for down() portion 
+	e. Rename column / Mod Column
+		1. $table->renameColumn('promoted', 'is_promoted');
+		2. $table->string('name', 100)->change(); <-- apply modification
+		3. $table->dropColumn('votes'); <-- Drops column
+		
+	f. Adding in column indexes
+		// After columns are created...
+		$table->primary('primary_id'); // Primary key; unnecessary if used increments()
+		$table->primary(['first_name', 'last_name']); // Composite keys
+		$table->unique('email'); // Unique index
+		$table->index('amount'); // Basic index
+	
+	g. Adding in foreign keys 
+		$table->foreign('user_id')->references('id')->on('users');
+	h. Dropping foreign keys 
+		a. $table->dropForeign('contacts_user_id_foreign'); <-- drop by combining the names of columns/tables being referenced
+		b. $table->dropForeign(['user_id']); <-- Passing in array of the fields 
+
+8.  Seeding 
+a. There is a database/seeds folder that has the DatabaseSeeder class that has a run() method to call the seeder 
+
+b. Run seeder along migration
+   php artisan migrate --seed
+   php artisan migrate:refresh --seed
+
+c. Run the seeder independently 
+	php artisan db:seed
+	php artisan db:seed --class=VotesTableSeeder
+
+d. php artisan make:seeder ContactsTableSeeder
+   ContactsTableSeeder class show up in the database/seeds directory.
+
+e. Need to call the custom ContactsTableSeeder from this file by adding in the line below
+	
+	// database/seeds/DatabaseSeeder.php
+	...
+	public function run()
+	{
+		$this->call(ContactsTableSeeder::class);
+	}
+
+f. Inserting custom records in seeder
+	<?php
+		use Illuminate\Database\Seeder;
+		use Illuminate\Database\Eloquent\Model;
+	class ContactsTableSeeder extends Seeder
+	{
+		public function run()
+		{
+		DB::table('contacts')->insert([
+			'name' => 'Lupita Smith',
+			'email' => 'lupita@gmail.com',
+		]);
+	}
+
+9. Model Factories 
+a. Model factories define one (or more) patterns for creating fake entries for your db tables.
+$factory->define(User::class, function (Faker\Generator $faker) {
+	return [
+		'name' => $faker->name,
+	];
+});
+
+$factory->define('users', function (Faker\Generator $faker) {
+	return [
+		'name' => $faker->name,
+	];
+});
+
+b.The $factory->define() method takes the factory name as the first parameter and a closure that’s run for each generation as the
+second parameter
+
+c. php artisan make:factory ContactFactory
+The simplest possible factory definition:
+
+$factory->define(Contact::class, function (Faker\Generator $faker) {
+	return [
+		'name' => 'Lupita Smith',
+		'email' => 'lupita@gmail.com',
+		];
+	});
+
+Now we can use the factory to create an instance of a contact 
+
+// Create one
+$contact = factory(Contact::class)->create();
+// Create many
+factory(Contact::class, 20)->create();
+
+	
+// A simple factory, modified to use Faker
+$factory->define(Contact::class, function (Faker\Generator $faker) {
+	return [
+		'name' => $faker->name,
+		'email' => $faker->email,
+		'email' => $faker->unique()->email <-- Guaranteess randomly generated styff is unique
+	];
+});
+
+/===== Return to factories later ====/
+
+Query Builder 
+1. Fluent interface is one that uses method chaining 
+$users = DB::table('users')->where('type', 'donor')->get();
+DB::statement('drop table users');
+DB::select('select * from contacts where validated = ?', [true]);
+DB::table('users')
+	->join('contacts', function ($join) {
+		$join->on('users.id', '=', 'contacts.user_id')
+			->where('contacts.type', 'donor');
+		})
+	->get();
+	
+DB::statement('SQL statement here'). <--- To make raw statements 
+
+## DB facade returns an instance of Illuminate\Support\Collection and Eloquent returns an instance of Illuminate\Database\Eloquent\Collection,
+$usersOfType = DB::select('select * from users where type = ?',[$type]);
+$usersOfType = DB::select('select * from users where type = :type', ['type' => $userType]);
+DB::insert('insert into contacts (name, email) values (?, ?)',['sally', 'sally@me.com']);
+$countUpdated = DB::update('update contacts set status = ? where id = ?',['donor', $id]);
+$countDeleted = DB::delete('delete from contacts where archived = ?',[true]);
+$usersOfType = DB::table('users')->where('type', $type)->get();
+$emails = DB::table('contacts')->select('email', 'email2 as second_email')->get();
+$newContacts = DB::table('contact')->where('created_at', '>', now()->subDay())->get();
+$newVips = DB::table('contacts')->where('vip', true)->where('created_at', '>', now()->subDay());
+$mediumDrinks = DB::table('drinks')->whereBetween('size', [6, 12])->get(); <--- between 6 and 12 
+$closeBy = DB::table('contacts')->whereIn('state', ['FL', 'GA', 'AL'])->get();
+DB::table('contacts')->select('city')->distinct()->get();
+$contacts = DB::table('contacts')->orderBy('last_name', 'asc')->get();
+$populousCities = DB::table('contacts')->groupBy('city')->havingRaw('count(contact_id) > 30')->get();
+$page4 = DB::table('contacts')->skip(30)->take(10)->get();
+$contacts = DB::table('contacts')->get();
+$vipContacts = DB::table('contacts')->where('vip', true)->get();
+$newestContact = DB::table('contacts')->orderBy('created_at', 'desc')->first();
+$contactFive = DB::table('contacts')->find(5);
+$countVips = DB::table('contacts')->where('vip', true)->count(); //also min() max()  sum()
+$contacts = DB::table('contacts')->select(DB::raw('*, (score * 100) AS integer_score'))->get();
+$users = DB::table('users')->join('contacts', 'users.id', '=', 'contacts.user_id')->select('users.*', 'contacts.name', 'contacts.status')->get();
+$contacts = DB::table('contacts')->whereNull('last_name')->union($first)->get();
+DB::table('contacts')->where('points', '>', 100)->update(['status' => 'vip']);
+
+// JSON column is set to true
+DB::table('users')->where('options->isAdmin', true)->get();
+// Set "options" JSON column to true
+DB::table('users')->update(['options->isVerified', true]);
+
+
+# Eloquent is an ActiveRecord ORM, which means it’s a database abstraction layer that
+provides a single interface to interact with multiple database types. “ActiveRecord”
+means that a single Eloquent class is responsible for not only providing the ability to
+interact with the table as a whole.
+
+// Defining Eloquent Models 
+1. php artisan make:model Contact <--- Creates eloquent models which creates a Contact.php in app/Contact.php
+   php artisan make:model Contact --migration <-- if you wanna create a migration along with it
+2. <?php
+	namespace App;
+	use Illuminate\Database\Eloquent\Model;
+	class Contact extends Model
+	{
+		//
+	}
+3. default behavior for table names is “snake cases” and pluralizes your class name so contact is Contactgs
+	protected $table = 'contacts_secondary'; <-- custom table name 
+4. Laravel assumes id column is the default primary key 	
+	protected $primaryKey = 'contact_id'; <-- changes the primary key 
+	public $incrementing = false; <--- not incrementing
+
+5. Queries with eloquent
+a. $allContacts = Contact::all();
+b.  $allContacts = Contact::first();
+c. $vipContacts = Contact::where('vip', true)->get();
+d. $newestContacts = Contact::orderBy('created_at', 'desc')->take(10)->get();
+e. Contact::findOrFail($contactId)
+
+// find(), findOrFail(), first() all returns the 1st records
+
+// Chunking is great for large amount of records
+f. Contact::chunk(100, function ($contacts) {
+		foreach ($contacts as $contact) {
+		// Do something with $contact
+		}
+	});
+
+g. $countVips = Contact::where('vip', true)->count();
+$sumVotes = Contact::sum('votes');
+$averageSkill = User::avg('skill_level');
+
+f. Inserts
+
+Way 1 
+$contact = new Contact;
+$contact->name = 'Ken Hirata';
+$contact->email = 'ken@hirata.com';
+$contact->save();
+
+Way 2
+$contact = new Contact([
+'name' => 'Ken Hirata',
+'email' => 'ken@hirata.com',
+]);
+$contact->save();
+
+Way 3
+$contact = Contact::create([
+'name' => 'Keahi Hale',
+'email' => 'halek481@yahoo.com',
+]);
+
+//Note - every property you set via Model::create() has to be approved for “mass assignment,”
+
+g. updates 
+
+# Example 1
+$contact = Contact::find(1);
+$contact->email = 'natalie@parkfamily.com';
+$contact->save();
+
+# Example 2
+Contact::where('created_at', '<', now()->subYear())
+->update(['longevity' => 'ancient']);
+
+# Fillable vs guarded 
+class Contact
+{
+	protected $fillable = ['name', 'email'];
+	// or
+	protected $guarded = ['id', 'created_at', 'updated_at', 'owner_id'];
+}
+
+# Example 3 
+# Only using select fields from request using only()
+Contact::create($request->only('name', 'email'));
+
+
+h. firstOrCreate() and firstOrNew()
+a. either grabs the instance first or creates it 
+b. firstOrCreate() and firstOrNew() takes an array of keys and values as the first parameter
+$contact = Contact::firstOrCreate(['email' => 'luis.ramos@myacme.com']);
+
+i. delete
+$contact = Contact::find(5);
+$contact->delete();
+Contact::destroy([1, 5, 7]);
+Contact::where('updated_at', '<', now()->subYear())->delete();
+
+j. Accessors, Mutators, and Attribute Casting 
+	i. Accessors allow you to define custom attributes for when you are reading data from the model instance 
+	ii. Can be used to change how a particular column is output or write a custom attribute not in DB 
+	iii. accessor requires sepecific naming conventions as get{PascalCasedPropertyName}Attribute
+
+// Model definition:
+class Contact extends Model
+{
+public function getNameAttribute($value)
+{
+return $value ?: '(No name provided)';
+}
+}
+// Accessor usage:
+$name = $contact->name;
+
+Defining an attribute with no backing column using Eloquent accessors
+// Model definition:
+class Contact extends Model
+{
+public function getFullNameAttribute()
+{
+return $this->first_name . ' ' . $this->last_name;
+}
+}
+// Accessor usage:
+$fullName = $contact->full_name;
+
+
+k. Mutators
+	i.  These are useful for determining how to process setting the data instead of getting it 
+	ii. Can be used modify the process of writing data to existing columns or allow for setting columns that don't exist 
+	iii. Naming Convention: set{PascalCasedPropertyName}Attribute.
+class Order extends Model
+{
+	public function setAmountAttribute($value)
+	{
+		$this->attributes['amount'] = $value > 0 ? $value : 0;
+	}
+}
+// Using the mutator
+$order->amount = '15';	
+
+l. attribute casting 
+class Contact
+{
+protected $casts = [
+	'vip' => 'boolean',
+	'children_names' => 'array',
+	'birthday' => 'date',
+];
+}
+
+Date Mutators 
+class Contact
+{
+	protected $dates = [
+		'met_at',
+	];
+}
+
+Eloquent Collections
+a. Laravel’s Collection objects (Illuminate\Support\Collection) and this is the result that is returned from query 
+b. simplest way to create a collection is to use the collect() helper $collection = collect([1, 2, 3]);
+c. Collections can also be used in any context (except typehinting)
+
+$odds = $collection->reject(function ($item) {
+	return $item % 2 === 0;
+});
+
+$multiplied = $collection->map(function ($item) {
+	return $item * 10;
+});
+
+$sum = $collection
+	->filter(function ($item) {
+			return $item % 2 == 0;
+	})->map(function ($item) {
+		return $item * 10;
+	})->sum();
+
+
+
+
+Custom Collection classes for Eloquent models
+	...
+	class OrderCollection extends Collection
+		{
+			public function sumBillableAmount()
+		{
+			return $this->reduce(function ($carry, $order) {
+				return $carry + ($order->billable ? $order->amount : 0);
+			}, 0);
+		}
+	}
+
+class Order extends Model
+{
+	public function newCollection(array $models = [])
+	{
+		return new OrderCollection($models);
+	}
+
+Serialization
+- Means that you take an array or object and conver to string such as JSON 
+
+$contactsArray = Contact::all()->toArray();
+$contactsJson = Contact::all()->toJson();
+
+// routes/web.php
+Route::get('api/contacts', function () {
+	return Contact::all(); // converts everything to a string 
+});
+
+Route::get('api/contacts/{id}', function ($id) {
+	return Contact::findOrFail($id);
+});
+
+Hiding attributes from JSON 
+class Contact extends Model
+{
+	public $hidden = ['password', 'remember_token'];
+	public $visible = ['name', 'email', 'status'];
+
+
+class Contact extends Model
+{
+	protected $appends = ['full_name']; // add it to the $appends array on the model to add it to the array and JSON output
+	public function getFullNameAttribute()
+	{
+		return "{$this->first_name} {$this->last_name}";
+	}
+}
+
+
+Relationships
+
+class Contact extends Model
+{
+	public function phoneNumber()
+	{
+		return $this->hasOne(PhoneNumber::class);  //Defining a 1:1 relationship
+	}
+
+Here’s how we access the PhoneNumber of a Contact:
+	$contact = Contact::first();
+	$contactPhone = $contact->phoneNumber;
+	
+return $this->hasOne(PhoneNumber::class, 'owner_id'); // if id column is different in joining table 
+
+
+// 1 to many
+class User extends Model
+{
+	public function contacts()
+	{
+		return $this->hasMany(Contact::class);
+	}
+}
+
+hasManyThrough()
+hasOneThrough()
+belongsToMany(Contact::class) // Many to Many 
+

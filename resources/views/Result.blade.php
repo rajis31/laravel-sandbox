@@ -7,9 +7,11 @@
     <title>Document</title>
 </head>
 <body>
-    
-    <em>
-        {{ result }}
-    </em>
+    @foreach($result as $item)
+        <em>{{ $item->name }}</em>
+        <em>{{ $item->count }}</em>
+    @endforeach
+    <br>
+    <a href="<?php echo url("/"); ?>">Go Back</a>
 </body>
 </html>
