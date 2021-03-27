@@ -20,6 +20,7 @@ class ItemSeeder extends Seeder
             $item=Items::create([
                 "name"=>Str::random(15,30),
                 "count"=>rand(0,20),
+                "user_id"=>1,
             ]);
             $item->save();
         }

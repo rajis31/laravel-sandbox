@@ -31,6 +31,8 @@ class TestEmail extends Mailable
     {
         return $this->from("beast@test.com")
                     ->subject("Test Mail")
-                    ->text("mail.TestEmail");
+                    ->view("mail.HtmlEmail")
+                    ->with(["fields"=>$this->fields])
+                    ->text("mail.PlainEmail");
     }
 }

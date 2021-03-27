@@ -10,8 +10,12 @@
     
     <form action="{{ route('email')}}" method="POST">
         @csrf
+        <label for="name">Name</label>
+        <input type="text" name="name"> 
+        <br>
         <label for="message">Enter a Message</label>
         <textarea name="message" id="message" cols="30" rows="10"></textarea>
+        <br>
         <button type="submit">Send</button>
     </form>
 </body>

@@ -18,4 +18,5 @@
             @endforeach
         </ul>
     </div>
+    <a href="{{ url('/message') }}">Link to send email</a>
 @endsection

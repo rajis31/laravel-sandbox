@@ -17,7 +17,7 @@ class CreateItemTable extends Migration
             $table->string("name",255);
             $table->integer("count");
             $table->timestamp("created")->nullable();
-            $table->integer("user_id")->nullable();
+            $table->bigInteger("user_id")->unsigned()->index();
             $table->timestamp("created_at");
             $table->timestamp("updated_at");
         });
@@ -30,6 +30,7 @@ class CreateItemTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists("items_user_id_foreign");
         Schema::dropIfExists("items");
     }
 }

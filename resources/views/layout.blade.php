@@ -8,6 +8,7 @@
     @stack("styles")
 </head>
 <body>
+
     <div class="header">
         @yield("header")
     </div>
