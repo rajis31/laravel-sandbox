@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ResetController;
+use App\Http\Controllers\CartController;
 
 
 
@@ -16,6 +17,9 @@ Route::get("/reset",[ResetController::class,'show'])->name("reset")->middleware(
 Route::get("/reset/{id}",[ResetController::class,'passReset'])->name("passReset")->middleware("guest");
 Route::get("/changepass",[ResetController::class,'changePass'])->name("changepass")->middleware("guest");
 
+// Cart
+Route::get("/cart",[CartController::class,'show'])->name("cart")->middleware("guest");
+
 
 
 // Register & Login User
@@ -24,8 +28,9 @@ Route::post('/register', [RegistrationController::class,'register']);
 Route::post('/reset', [ResetController::class,'resetLink']);
 Route::post('/reset/{id}', [ResetController::class,'resetPass']);
 Route::post('/changepass', [ResetController::class,'changePass']);
-
-
+Route::post("/updateCart",[CartController::class,'updateCart'])
+                        ->name("updateCart")
+                        ->middleware("guest");
 
 // Various User Pagess
 Route::middleware("auth")->group(function(){
