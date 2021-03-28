@@ -31,6 +31,9 @@
     <div class="register">
         <a href="{{ route('register') }}">Register Here</a>
     </div>
+    <div class="reset">
+        <a href="{{ route('reset') }}">Reset Password</a>
+    </div>
    
 </body>
 </html>

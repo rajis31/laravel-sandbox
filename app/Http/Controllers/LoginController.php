@@ -17,10 +17,10 @@ class LoginController extends Controller
 
     public function authenticate(LoginRequest $requestFields){
        $attributes = $requestFields->only(["username","password"]);
-
         if(Auth::attempt($attributes)){
             return redirect()->route("home");
         }
+        return redirect()->route("login");
     }
 
     public function logout()
